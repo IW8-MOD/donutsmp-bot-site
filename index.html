@@ -1,39 +1,97 @@
+cat << 'EOF' > index.html
 <!DOCTYPE html>
 <html lang="ro">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AFK Bot | DonutSMP 1.21</title>
+  <title>DonutSMP Bot Dashboard</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: #0f0f17;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+    body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; margin: 0; padding: 20px; }
+    .card { background: #1e1e1e; padding: 20px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    h1 { color: #ff9800; font-size: 22px; }
+    .status { font-weight: bold; padding: 8px 15px; border-radius: 5px; display: inline-block; margin-bottom: 15px; }
+    .ONLINE { background: #4caf50; color: #fff; }
+    .OFFLINE { background: #f44336; color: #fff; }
+    .CONNECTING { background: #ff9800; color: #fff; }
+    .btn-group button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: #fff; }
+    .btn-start { background: #4caf50; }
+    .btn-stop { background: #f44336; }
+    .btn-restart { background: #ff9800; }
+    #logs { background: #000; color: #00ff00; padding: 10px; border-radius: 5px; text-align: left; height: 180px; overflow-y: auto; font-family: monospace; font-size: 13px; margin-top: 15px; }
+    .chat-box { margin-top: 15px; display: flex; gap: 5px; }
+    .chat-box input { flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #333; background: #222; color: #fff; }
+    .chat-box button { padding: 8px 15px; background: #2196f3; color: #fff; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>DonutSMP Bot Panel</h1>
+    <div>Status: <span id="status" class="status OFFLINE">OFFLINE</span></div>
+
+    <div class="btn-group">
+      <button class="btn-start" onclick="sendCommand('start')">START</button>
+      <button class="btn-stop" onclick="sendCommand('stop')">STOP</button>
+      <button class="btn-restart" onclick="sendCommand('restart')">RESTART</button>
+    </div>
+
+    <div id="logs">Se încarcă logurile...</div>
+
+    <div class="chat-box">
+      <input type="text" id="chatInput" placeholder="Trimite un mesaj în Minecraft...">
+      <button onclick="sendChat()">SND</button>
+    </div>
+  </div>
+
+  <script>
+    // Schimbă IP_TERMUX cu IP-ul local al telefonului tău (ex: http://192.168.1.50:3000)
+    // Sau folosește adresa de tunnel (ex: Ngrok / Playit.gg) dacă îl accesezi din afara rețelei
+    const API_URL = 'http://localhost:3000';
+
+    async function updateDashboard() {
+      try {
+        const res = await fetch(`${API_URL}/api/status`);
+        const data = await res.json();
+        
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = data.status;
+        statusEl.className = `status ${data.status}`;
+
+        const logsEl = document.getElementById('logs');
+        logsEl.innerHTML = data.logs.join('<br>');
+        logsEl.scrollTop = logsEl.scrollHeight;
+      } catch (err) {
+        document.getElementById('status').innerText = 'DESCONECTAT DE LA API';
+        document.getElementById('status').className = 'status OFFLINE';
+      }
     }
-    .card {
-      background: #1a1b26;
-      border: 1px solid #2ac3de;
-      border-radius: 16px;
-      padding: 30px;
-      max-width: 450px;
-      width: 100%;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-      text-align: center;
+
+    async function sendCommand(action) {
+      await fetch(`${API_URL}/api/${action}`, { method: 'POST' });
+      updateDashboard();
     }
-    h1 { color: #7aa2f7; margin-bottom: 10px; font-size: 24px; }
-    p { color: #a9b1d6; font-size: 14px; margin-bottom: 20px; }
-    .badge {
-      display: inline-block;
-      background: #9ece6a;
-      color: #15161e;
-      font-weight: bold;
-      padding: 6px 16px;
+
+    async function sendChat() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value;
+      if (!msg) return;
+
+      await fetch(`${API_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+
+      input.value = '';
+      updateDashboard();
+    }
+
+    setInterval(updateDashboard, 2000);
+    updateDashboard();
+  </script>
+</body>
+</html>
+EOF
       border-radius: 20px;
       font-size: 13px;
       margin-bottom: 20px;
